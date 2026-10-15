@@ -1,0 +1,10 @@
+{
+  "name": "bunny-ai-frontend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Frontend UI for Bunny AI Assistant",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "bunny-ai-backend",
+  "version": "1.0.0",
+  "description": "Backend API server for Bunny AI Personal Assistant",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "migrate": "node scripts/migrate.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "openai": "^7.33.0",
+    "pg": "^8.23.1"
+  }
+}

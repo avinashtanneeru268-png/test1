@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bunny AI — Your Personal Assistant</title>
+  <meta name="description" content="Bunny AI — A state-of-the-art, sleek, personal AI assistant powered by OpenAI with real-time streaming, voice interaction, and Supabase cloud sync.">
+  
+  <!-- Modern Typography from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Markdown & Code Highlighting Libraries -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  
+  <!-- Custom Styles & Vector Favicon -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="bunny-logo.svg">
+</head>
+<body>
+
+  <!-- ========================================================================
+       PREMIUM STARTUP ANIMATION
+       ======================================================================== -->
+  <div class="startup-screen" id="startup-screen" aria-label="Bunny AI Startup Animation">
+    <div class="startup-ambient-red" aria-hidden="true"></div>
+    <div class="startup-content">
+      <!-- 3D Rotating Logo Container -->
+      <div class="startup-logo-wrapper">
+        <div class="startup-logo-disc">
+          <img src="bunny-logo.svg" alt="Bunny AI Logo" class="startup-logo-img">
+        </div>
+        <div class="startup-pulse-ring ring-1"></div>
+        <div class="startup-pulse-ring ring-2"></div>
+      </div>
+
+      <!-- Typography -->
+      <div class="startup-brand">
+        <h1 class="startup-title">BUNNY <span class="startup-ai-badge">AI</span></h1>
+        <p class="startup-tagline">Your Personal Assistant</p>
+      </div>
+
+      <!-- Luminous Wave Loader -->
+      <div class="startup-loader">
+        <div class="startup-loader-bar" id="startup-loader-bar"></div>
+      </div>
+      <p class="startup-status" id="startup-status-text">Initializing neural interface...</p>
+
+      <button id="btn-skip-startup" class="startup-skip-btn" title="Skip startup sequence">
+        Press anywhere to continue &rarr;
+      </button>
+    </div>
+  </div>
+
+  <!-- Ambient background cyber lighting effects -->
+  <div class="ambient-glow glow-top-left" aria-hidden="true"></div>
+  <div class="ambient-glow glow-bottom-right" aria-hidden="true"></div>
+
+  <!-- ========================================================================
+       HISTORY SIDEBAR DRAWER
+       ======================================================================== -->
+  <aside class="history-sidebar" id="history-sidebar" aria-label="Conversation History">
+    <div class="sidebar-header">
+      <div class="sidebar-title-group">
+        <div class="sidebar-mini-logo">
+          <img src="bunny-logo.svg" alt="Bunny Logo" width="22" height="22">
+        </div>
+        <h3>Chat History</h3>
+      </div>
+      <div class="sidebar-header-actions">
+        <button id="btn-new-chat" class="btn-new-chat" title="Start a fresh conversation (Ctrl/Cmd + N)">
+          + New Chat
+        </button>
+        <button id="btn-close-sidebar" class="btn-icon-sm" title="Close Sidebar" aria-label="Close sidebar">&times;</button>
+      </div>
+    </div>
+
+    <!-- Sync Status Badge -->
+    <div class="sidebar-sync-badge" id="sidebar-sync-badge">
+      <span class="sync-dot"></span>
+      <span id="sidebar-sync-text">Checking Database...</span>
+    </div>
+
+    <!-- List of Conversations -->
+    <div class="conversations-list" id="conversations-list">
+      <div class="sidebar-empty-state">
+        <p>No saved conversations yet.</p>
+        <span>Send a message to start and auto-save!</span>
+      </div>
+    </div>
+
+    <!-- Sidebar Bottom Actions -->
+    <div class="sidebar-footer">
+      <button id="btn-clear-all-history" class="btn-sidebar-danger" title="Clear all saved conversations">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
+        </svg>
+        <span>Clear All History</span>
+      </button>
+    </div>
+  </aside>
+  <div class="sidebar-overlay hidden" id="sidebar-overlay"></div>
+
+  <!-- ========================================================================
+       MAIN APP CONTAINER
+       ======================================================================== -->
+  <div class="app-container">
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+      <div class="brand-group">
+        <!-- Sidebar Toggle Button -->
+        <button id="btn-toggle-sidebar" class="btn-icon" title="Toggle History Drawer" aria-label="Toggle History">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
+        <div class="brand-icon-wrapper" id="brand-header-icon" title="Bunny AI">
+          <img src="bunny-logo.svg" alt="Bunny AI Logo" class="brand-logo-img">
+        </div>
+        
+        <div class="brand-text">
+          <div class="brand-title-row">
+            <h1 class="brand-title">Bunny <span class="brand-ai-pill">AI</span></h1>
+            <span class="badge badge-gradient" id="current-model-badge">GPT-6 Luna</span>
+          </div>
+          <div class="connection-status" id="connection-status">
+            <span class="status-dot pulsing"></span>
+            <span class="status-label" id="status-label">Connecting...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Toolbar -->
+      <div class="header-actions">
+        <!-- Voice Assistant Mode Button -->
+        <button id="btn-open-voice" class="btn-voice-header" title="Talk to Bunny (Voice Mode)" aria-label="Open Voice Assistant">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+          <span class="voice-btn-text">Voice Mode</span>
+        </button>
+
+        <!-- Model Selector Dropdown -->
+        <div class="select-wrapper">
+          <select id="model-select" class="custom-select" title="Select OpenAI Model" aria-label="Select OpenAI Model">
+            <option value="gpt-6-luna" selected>GPT-6 Luna (Speed)</option>
+            <option value="gpt-6-sol">GPT-6 Sol (Reasoning)</option>
+            <option value="gpt-6-astra">GPT-6 Astra (Flagship)</option>
+            <option value="gpt-4o">GPT-4o (Multimodal)</option>
+            <option value="gpt-4o-mini">GPT-4o Mini (Fallback)</option>
+          </select>
+        </div>
+
+        <!-- Supabase Database Status Pill -->
+        <button id="btn-supabase-status" class="btn-pill" title="Supabase Database Status & Settings">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+          <span id="supabase-status-text">Database</span>
+        </button>
+
+        <!-- API Key Status Pill -->
+        <button id="btn-api-key-modal" class="btn-pill" title="Configure OpenAI API Key & Model Settings">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 2l-2 2m-1.5 1.5L16 7l-1.5-1.5-3 3 1.5 1.5L9 13l-4 4-2-2-1 1 3 3 1-1-2-2 4-4 2.5 2.5 3-3-1.5-1.5 3-3 1.5 1.5L20 4l2-2z"/>
+          </svg>
+          <span id="api-key-status-text">OpenAI Key</span>
+        </button>
+
+        <!-- Export Chat Button -->
+        <button id="btn-export-chat" class="btn-icon" title="Export Conversation as Markdown" aria-label="Export Chat">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+        </button>
+
+        <!-- Clear Viewport Button -->
+        <button id="btn-clear-chat" class="btn-icon" title="Clear Viewport" aria-label="Clear Viewport">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/>
+          </svg>
+        </button>
+
+        <!-- Settings Button -->
+        <button id="btn-settings" class="btn-icon" title="Settings" aria-label="Settings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Chat Content Viewport -->
+    <main class="chat-viewport" id="chat-viewport">
+      <!-- Empty State / Welcome Screen -->
+      <section class="welcome-container" id="welcome-container">
+        <div class="welcome-orb-container">
+          <div class="welcome-orb">
+            <img src="bunny-logo.svg" alt="Bunny AI" class="welcome-bunny-logo">
+          </div>
+          <div class="welcome-pulse-glow"></div>
+        </div>
+
+        <h2 class="welcome-heading">Hey! I'm Bunny. How can I help you today?</h2>
+        <p class="welcome-subtext">Powered by official OpenAI intelligence & Supabase session memory. Talk or type to start our conversation.</p>
+
+        <!-- Prompt Suggestions Grid -->
+        <div class="suggestion-grid">
+          <div class="suggestion-card" data-prompt="Explain quantum computing in simple terms with an intuitive real-world analogy.">
+            <div class="card-icon">⚡</div>
+            <div class="card-body">
+              <div class="card-title">Explain a Concept</div>
+              <div class="card-description">Quantum computing simplified with clear, vivid analogies</div>
+            </div>
+          </div>
+
+          <div class="suggestion-card" data-prompt="Write a resilient Node.js module using async/await and fetch to query an API with exponential backoff retries.">
+            <div class="card-icon">💻</div>
+            <div class="card-body">
+              <div class="card-title">Code Assistance</div>
+              <div class="card-description">Resilient JavaScript fetch implementation with retry mechanism</div>
+            </div>
+          </div>
+
+          <div class="suggestion-card" data-prompt="Draft a friendly, polished, and compelling announcement email for launching Bunny AI to our users.">
+            <div class="card-icon">✉️</div>
+            <div class="card-body">
+              <div class="card-title">Creative Draft</div>
+              <div class="card-description">Product launch announcement email to engage our community</div>
+            </div>
+          </div>
+
+          <div class="suggestion-card" data-prompt="Give me 5 actionable architectural tactics to optimize web app performance and reduce API token overhead.">
+            <div class="card-icon">🚀</div>
+            <div class="card-body">
+              <div class="card-title">Architecture & Performance</div>
+              <div class="card-description">5 practical tactics to shrink bundle size and minimize token costs</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Message History List -->
+      <div class="messages-list" id="messages-list">
+        <!-- Chat bubbles dynamically injected here -->
+      </div>
+    </main>
+
+    <!-- Bottom Chat Input Dock -->
+    <footer class="chat-input-container">
+      <div class="input-card">
+        <div class="input-toolbar-top">
+          <span class="active-model-indicator">
+            <span class="dot-indicator"></span>
+            <span id="dock-model-name">GPT-6 Luna</span>
+          </span>
+          <span class="streaming-indicator" id="streaming-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Stream Enabled
+          </span>
+        </div>
+
+        <form id="chat-form" class="chat-form">
+          <textarea 
+            id="chat-input" 
+            class="chat-textarea" 
+            placeholder="Type your message to Bunny... (Shift + Enter for new line)" 
+            rows="1" 
+            autocomplete="off"
+            aria-label="Your message to Bunny AI"
+          ></textarea>
+
+          <div class="input-actions">
+            <!-- Voice Input Button inside dock -->
+            <button 
+              type="button" 
+              id="btn-mic-input" 
+              class="btn-action-icon btn-mic" 
+              title="Speak to Bunny (Speech-to-Text)" 
+              aria-label="Microphone"
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+
+            <!-- Stop Generation Button -->
+            <button 
+              type="button" 
+              id="btn-stop" 
+              class="btn-send btn-stop hidden" 
+              title="Stop Generation" 
+              aria-label="Stop Generating Response"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <rect x="5" y="5" width="14" height="14" rx="2"/>
+              </svg>
+            </button>
+
+            <!-- Send Message Button -->
+            <button 
+              type="submit" 
+              id="btn-send" 
+              class="btn-send" 
+              title="Send Message" 
+              aria-label="Send Message to Bunny"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z"/>
+              </svg>
+            </button>
+          </div>
+        </form>
+
+        <div class="input-footer">
+          <span class="footer-tip">Press <strong>Enter</strong> to send &bull; <strong>Shift + Enter</strong> for line break</span>
+          <span class="char-count" id="char-count">0 characters</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ========================================================================
+       BUNNY VOICE ASSISTANT MODAL (Interactive Voice Mode)
+       ======================================================================== -->
+  <div class="voice-modal-backdrop hidden" id="voice-modal" role="dialog" aria-modal="true" aria-labelledby="voice-modal-title">
+    <div class="voice-card">
+      <div class="voice-header">
+        <div class="voice-title-group">
+          <div class="voice-mini-logo">
+            <img src="bunny-logo.svg" alt="Bunny AI" width="24" height="24">
+          </div>
+          <div>
+            <h3 id="voice-modal-title">Bunny Voice Mode</h3>
+            <span class="voice-engine-badge">OpenAI Whisper &amp; TTS-1</span>
+          </div>
+        </div>
+        <button class="voice-close" id="btn-close-voice" aria-label="Close Voice Mode">&times;</button>
+      </div>
+
+      <div class="voice-body">
+        <!-- Interactive Animated Voice Orb -->
+        <div class="voice-visualizer-container">
+          <div class="voice-orb" id="voice-orb">
+            <img src="bunny-logo.svg" alt="Bunny AI" class="voice-orb-logo">
+          </div>
+          <div class="voice-soundwave-ring wave-1"></div>
+          <div class="voice-soundwave-ring wave-2"></div>
+          <div class="voice-soundwave-ring wave-3"></div>
+        </div>
+
+        <!-- Dynamic State Indicator -->
+        <h4 class="voice-status-heading" id="voice-status-heading">Talk to Bunny</h4>
+        <p class="voice-status-subtext" id="voice-status-subtext">Tap the microphone to speak.</p>
+
+        <!-- Live Transcript Preview -->
+        <div class="voice-transcript-box hidden" id="voice-transcript-box">
+          <div class="transcript-label">Transcribed Speech:</div>
+          <p class="transcript-content" id="voice-transcript-text"></p>
+        </div>
+
+        <!-- Permission / Fallback Warning -->
+        <div class="voice-alert hidden" id="voice-alert">
+          <span id="voice-alert-text"></span>
+        </div>
+      </div>
+
+      <div class="voice-footer">
+        <!-- Audio Playback Controls -->
+        <div class="voice-controls-row">
+          <button id="btn-voice-mute" class="btn-voice-control" title="Mute/Unmute Spoken AI" aria-label="Mute Voice">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </svg>
+          </button>
+
+          <!-- Main Microphone / Talk Button -->
+          <button id="btn-voice-action" class="btn-voice-primary" title="Start Talking to Bunny" aria-label="Toggle Speech">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+
+          <button id="btn-voice-replay" class="btn-voice-control" title="Replay Last Spoken Response" aria-label="Replay Voice">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="voice-footer-meta">
+          <span>Natural AI Voice &bull; Nova</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       SETTINGS & CONFIGURATION MODAL
+       ======================================================================== -->
+  <div class="modal-backdrop hidden" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon">
+            <img src="bunny-logo.svg" alt="Bunny AI" width="22" height="22">
+          </div>
+          <div>
+            <h3 class="modal-title" id="modal-title">Bunny AI Settings</h3>
+            <p class="modal-subtitle">Configure OpenAI Model, Credentials &amp; Database</p>
+          </div>
+        </div>
+        <button class="modal-close" id="btn-close-modal" aria-label="Close Modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- OpenAI Section -->
+        <div class="settings-section">
+          <div class="section-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L14.7 9.3L22 12L14.7 14.7L12 22L9.3 14.7L2 12L9.3 9.3L12 2Z"/>
+            </svg>
+            <span>OpenAI API &amp; Model</span>
+          </div>
+
+          <div class="status-callout" id="ai-status-callout">
+            <div class="callout-icon">🐰</div>
+            <div class="callout-text" id="ai-status-detail">Checking OpenAI configuration...</div>
+          </div>
+
+          <div class="form-group">
+            <label for="input-api-key" class="form-label">
+              OpenAI API Key
+              <span class="label-optional">(Stored securely in backend/.env or browser session)</span>
+            </label>
+            <div class="input-with-button">
+              <input 
+                type="password" 
+                id="input-api-key" 
+                class="form-input" 
+                placeholder="sk-proj-..." 
+                autocomplete="off"
+              >
+              <button type="button" id="btn-toggle-key-visibility" class="btn-toggle-eye" title="Toggle Visibility">
+                👁️
+              </button>
+            </div>
+            <p class="input-help">
+              <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" class="link-external">
+                Get your API key from OpenAI Platform &nearr;
+              </a>
+            </p>
+          </div>
+
+          <!-- Model Choice & Verification Button -->
+          <div class="form-group">
+            <label for="modal-model-select" class="form-label">Text Generation Model</label>
+            <div class="select-row-with-btn">
+              <select id="modal-model-select" class="form-select">
+                <option value="gpt-6-luna">GPT-6 Luna (Recommended Speed)</option>
+                <option value="gpt-6-sol">GPT-6 Sol (Enhanced Reasoning)</option>
+                <option value="gpt-6-astra">GPT-6 Astra (Flagship Omni)</option>
+                <option value="gpt-4o">GPT-4o (Multimodal)</option>
+                <option value="gpt-4o-mini">GPT-4o Mini (Verified Fallback)</option>
+              </select>
+              <button type="button" id="btn-verify-model" class="btn-secondary btn-sm" title="Test real model availability">
+                Verify Access
+              </button>
+            </div>
+            <p class="input-help" id="model-verify-feedback">Tests if your credentials have access to the selected model.</p>
+          </div>
+
+          <!-- System Prompt / Persona -->
+          <div class="form-group">
+            <label for="input-system-prompt" class="form-label">Bunny Assistant Persona / System Instruction</label>
+            <textarea 
+              id="input-system-prompt" 
+              class="form-textarea" 
+              rows="2" 
+              placeholder="You are Bunny, an intelligent, helpful, articulate, and friendly AI personal assistant..."
+            ></textarea>
+          </div>
+
+          <!-- Temperature Slider -->
+          <div class="form-group">
+            <div class="range-header">
+              <label for="input-temperature" class="form-label">Temperature: <span id="temp-display">0.7</span></label>
+              <span class="range-hint">0 = Precise &bull; 1 = Creative</span>
+            </div>
+            <input type="range" id="input-temperature" class="form-range" min="0" max="1" step="0.05" value="0.7">
+          </div>
+
+          <!-- Streaming Toggle -->
+          <div class="form-group toggle-group">
+            <div class="toggle-info">
+              <span class="form-label mb-0">Enable Real-Time Streaming</span>
+              <span class="input-help">Tokens stream progressively as generated via SSE</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-streaming" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </div>
+
+        <hr class="modal-divider">
+
+        <!-- Supabase Section -->
+        <div class="settings-section">
+          <div class="section-badge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            <span>Supabase Cloud Database</span>
+          </div>
+
+          <div class="status-callout" id="supabase-status-callout">
+            <div class="callout-icon">⚡</div>
+            <div class="callout-text" id="supabase-status-detail">Checking Supabase configuration...</div>
+          </div>
+
+          <div class="form-group">
+            <label for="input-supabase-url" class="form-label">
+              Supabase Project URL
+              <span class="label-optional">(SUPABASE_URL in backend/.env)</span>
+            </label>
+            <input 
+              type="text" 
+              id="input-supabase-url" 
+              class="form-input" 
+              placeholder="https://xyzcompany.supabase.co" 
+              autocomplete="off"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="input-supabase-anon-key" class="form-label">
+              Supabase Anon Public Key
+              <span class="label-optional">(SUPABASE_ANON_KEY in .env)</span>
+            </label>
+            <input 
+              type="password" 
+              id="input-supabase-anon-key" 
+              class="form-input" 
+              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
+              autocomplete="off"
+            >
+            <p class="input-help">
+              <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" class="link-external">
+                Supabase Dashboard &gt; Project Settings &gt; API &nearr;
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="btn-replay-startup" class="btn-secondary" title="Replay Bunny startup animation">
+          Replay Intro
+        </button>
+        <button type="button" id="btn-test-supabase" class="btn-secondary">Test Supabase</button>
+        <button type="button" id="btn-save-settings" class="btn-primary">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
